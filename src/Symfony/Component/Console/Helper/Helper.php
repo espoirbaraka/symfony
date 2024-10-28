@@ -102,6 +102,13 @@ abstract class Helper implements HelperInterface
 
         $times = [];
         foreach ($timeFormats as $index => $format) {
+            if (3600 === $format[0]) {
+                $unitCount = $secs / $format[0];
+                $unitCount = number_format($unitCount, 1);
+                $times[$index] = $unitCount.' '.$format[2];
+                break;
+            }
+
             $seconds = isset($timeFormats[$index + 1]) ? $secs % $timeFormats[$index + 1][0] : $secs;
 
             if (isset($times[$index - $precision])) {
@@ -122,7 +129,24 @@ abstract class Helper implements HelperInterface
             $secs -= $seconds;
         }
 
-        return implode(', ', array_reverse($times));
+        if (3600 === $format[0]) {
+            $totalHours = 0;
+            $minutes = 0;
+
+            foreach ($times as $time) {
+                if (str_contains($time, 'hr')) {
+                    $totalHours += (float) filter_var($time, \FILTER_SANITIZE_NUMBER_FLOAT, \FILTER_FLAG_ALLOW_FRACTION);
+                } elseif (str_contains($time, 'min')) {
+                    $minutes += (float) filter_var($time, \FILTER_SANITIZE_NUMBER_FLOAT, \FILTER_FLAG_ALLOW_FRACTION);
+                }
+            }
+
+            $totalHours += $minutes / 60;
+
+            return number_format($totalHours, 1).' '.($totalHours < 2 ? 'hr' : 'hrs');
+        } else {
+            return implode(', ', array_reverse($times));
+        }
     }
 
     public static function formatMemory(int $memory): string
